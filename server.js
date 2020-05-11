@@ -1,25 +1,25 @@
-const express = require("express");
-const dotenv = require("dotenv");
-const morgan = require("morgan");
-const path = require("path");
-const colors = require("colors");
-const fileupload = require("express-fileupload");
-const cookieParser = require("cookie-parser");
-const errorHandler = require("./middleware/error");
-const connectDb = require("./config/db");
+const express = require('express');
+const dotenv = require('dotenv');
+const morgan = require('morgan');
+const path = require('path');
+const colors = require('colors');
+const fileupload = require('express-fileupload');
+const cookieParser = require('cookie-parser');
+const errorHandler = require('./middleware/error');
+const connectDb = require('./config/db');
 
 // Load env vars
 dotenv.config({
-  path: "./config/config.env",
+  path: './config/config.env',
 });
 
 // Connect to MongodB server
 connectDb();
 
 // Load route files
-const bootcamps = require("./routes/bootcamps");
-const courses = require("./routes/courses");
-const auth = require("./routes/auth");
+const bootcamps = require('./routes/bootcamps');
+const courses = require('./routes/courses');
+const auth = require('./routes/auth');
 
 const app = express();
 
@@ -33,17 +33,17 @@ app.use(cookieParser());
 app.use(fileupload());
 
 //use logger middleware to log request
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
 }
 
 // Set static path
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Mount routers
-app.use("/api/v1/bootcamps", bootcamps);
-app.use("/api/v1/courses", courses);
-app.use("/api/v1/auth", auth);
+app.use('/api/v1/bootcamps', bootcamps);
+app.use('/api/v1/courses', courses);
+app.use('/api/v1/auth', auth);
 
 //Error handler middleware
 app.use(errorHandler);
@@ -58,7 +58,7 @@ const server = app.listen(
 );
 
 // Handle UnhandledPromiseRejection error
-process.on("unhandledRejection", (err, promise) => {
+process.on('unhandledRejection', (err, promise) => {
   console.log(`1: Error: ${err.message}`.red);
   server.close(() => {
     process.exit(1);

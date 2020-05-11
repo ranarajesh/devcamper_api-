@@ -1,0 +1,48 @@
+version: '3.3'
+services:
+  # Node backend service
+  devcamper-api:
+    container_name: devcamper-api
+    build: ./
+    working_dir: /usr/src/devcamper-api
+    volumes:
+      - ./:/usr/src/devcamper-api
+    command: npm run dev
+    ports:
+      - '3000:3000'
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/devcamper-api
+      NODE_ENV: development
+    links:
+      - mongodb
+    depends_on:
+      - seeder
+
+  # Mongodb data seeder for app setup
+  seeder:
+    build: .
+    command: node seeder -i
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/devcamper-api
+    links:
+      - mongodb
+    depends_on:
+      - del-seeder
+      - mongodb
+  # Delete existing seeder data
+  del-seeder:
+    build: .
+    command: node seeder -d
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/devcamper-api
+    links:
+      - mongodb
+    depends_on:
+      - mongodb
+
+  # Mongodb server setup
+  mongodb:
+    container_name: mongodb
+    image: mongo
+    ports:
+      - '27017:27017'
