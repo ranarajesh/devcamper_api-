@@ -1,4 +1,5 @@
 const express = require("express");
+const { protect, authorize } = require("../middleware/auth");
 const {
   getBootcamps,
   getBootcamp,
@@ -6,8 +7,12 @@ const {
   updateBootcamp,
   deleteBootcamp,
   getBootcampsInRadius,
+  bootcampPhotoUpload,
 } = require("../controllers/bootcamps");
 const router = express.Router();
+
+const advanceResults = require("../middleware/advanceResults");
+const Bootcamp = require("../models/Bootcamp");
 
 //Include resource router
 const courseRouter = require("./courses");
@@ -17,49 +22,19 @@ router.use("/:bootcampId/courses", courseRouter);
 
 router.route("/:zipcode/:distance").get(getBootcampsInRadius);
 
-router.route("/").get(getBootcamps).post(createBootcamp);
+router
+  .route("/")
+  .get(advanceResults(Bootcamp, "courses"), getBootcamps)
+  .post(protect, authorize("publisher", "admin"), createBootcamp);
 
 router
   .route("/:id")
   .get(getBootcamp)
-  .put(updateBootcamp)
-  .delete(deleteBootcamp);
-/*
- always create same route name for all methods of that particular route
- like. /api/v1/bootcamps  Method supported GET, POST, PUT/PATCH , DELETE 
- */
-// router.get("/", (req, res) => {
-//   res.status(200).json({
-//     success: true,
-//     msg: `Showing list of all Bootcamps`
-//   });
-// });
-// router.get("/:id", (req, res) => {
-//   res.status(200).json({
-//     success: true,
-//     msg: `Show bootcamp ${req.params.id}`
-//   });
-// });
+  .put(protect, authorize("publisher", "admin"), updateBootcamp)
+  .delete(protect, authorize("publisher", "admin"), deleteBootcamp);
 
-// router.post("", (req, res) => {
-//   res.status(200).json({
-//     success: true,
-//     msg: `New Bootcamp is created`
-//   });
-// });
-
-// router.put("/:id", (req, res) => {
-//   res.status(200).json({
-//     success: true,
-//     msg: `Update Bootcamp ${req.params.id}`
-//   });
-// });
-
-// router.delete("/:id", (req, res) => {
-//   res.status(200).json({
-//     success: true,
-//     msg: `Delete Bootcamp ${req.params.id}}`
-//   });
-// });
+router
+  .route("/:id/photo")
+  .put(protect, authorize("publisher", "admin"), bootcampPhotoUpload);
 
 module.exports = router;

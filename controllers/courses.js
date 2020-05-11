@@ -1,6 +1,7 @@
 const Course = require("../models/Course");
 const asyncHandler = require("../middleware/asyncHandler");
 const ErrorResponse = require("../utils/errorResponse");
+const { checkForOwner } = require("../utils/controllers");
 const BootCamp = require("../models/Bootcamp");
 
 /**
@@ -12,23 +13,24 @@ const BootCamp = require("../models/Bootcamp");
  */
 exports.getCourses = asyncHandler(async (req, res, next) => {
   const { bootcampId } = req.params;
-  let query;
 
   if (bootcampId) {
-    query = Course.find({ bootcamp: bootcampId });
+    const courses = await Course.find({ bootcamp: bootcampId });
+    return res.status(200).json({
+      success: true,
+      count: courses.length,
+      data: courses,
+    });
   } else {
-    query = Course.find().populate({
-      path: "bootcamp",
-      select: "name description",
+    const courses = await res.advanceResults.advanceQuery;
+
+    res.status(200).json({
+      success: true,
+      count: courses.length,
+      data: courses,
+      pagination: res.advanceResults.pagination,
     });
   }
-  const courses = await query;
-
-  res.status(200).json({
-    success: true,
-    count: courses.length,
-    data: courses,
-  });
 });
 
 /**
@@ -62,11 +64,26 @@ exports.getCourse = asyncHandler(async (req, res, next) => {
 
 exports.createCourse = asyncHandler(async (req, res, next) => {
   const { bootcampId } = req.params;
+  const userId = req.user.id;
+  const { user } = req;
+  req.body.user = userId;
   req.body.bootcamp = bootcampId;
+
   // Check if bootcamp is exit with specific id
   const bootcamp = await BootCamp.findById(bootcampId);
   if (!bootcamp) {
     return next(new ErrorResponse(`No Bootcamp is found with id: ${id}`, 404));
+  }
+
+  //Check User is owner of Bootcamp under which course is being created
+  const isOwner = checkForOwner(user, bootcamp);
+  if (!isOwner) {
+    return next(
+      new ErrorResponse(
+        `You not allow to add course under bootcamp id ${bootcampId}`,
+        401
+      )
+    );
   }
 
   const course = await Course.create(req.body);
@@ -85,11 +102,24 @@ exports.createCourse = asyncHandler(async (req, res, next) => {
  */
 exports.updateCourse = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
+  const { user } = req;
   let course = await Course.findById(id);
 
   if (!course) {
     return next(new ErrorResponse(`No course is found with id: ${id}`, 404));
   }
+
+  //Check User is owner of Course
+  const isOwner = checkForOwner(user, course);
+  if (!isOwner) {
+    return next(
+      new ErrorResponse(
+        `You are not authorized to update the course ${id}`,
+        401
+      )
+    );
+  }
+
   course = await Course.findByIdAndUpdate(id, req.body, {
     new: true,
     runValidators: true,
@@ -111,10 +141,22 @@ exports.updateCourse = asyncHandler(async (req, res, next) => {
  */
 exports.deleteCourse = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
+  const { user } = req;
   let course = await Course.findById(id);
 
   if (!course) {
     return next(new ErrorResponse(`No course is found with id: ${id}`, 404));
+  }
+
+  //Check User is owner of Course
+  const isOwner = checkForOwner(user, course);
+  if (!isOwner) {
+    return next(
+      new ErrorResponse(
+        `You are not authorized to Delete this course ${id}`,
+        401
+      )
+    );
   }
 
   await course.remove();

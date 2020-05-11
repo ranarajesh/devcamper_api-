@@ -1,10 +1,10 @@
-const ErrorResponse = require("../utils/errorResponse");
+const ErrorResponse = require('../utils/errorResponse');
 
 const errorHandler = (err, req, res, next) => {
   let error = { ...err };
-
+  error.message = err.message;
   // Mongoose Cast to bad ObjectId
-  if (error.name === "CastError") {
+  if (error.name === 'CastError') {
     const message = `Resource Not Found`;
     error = new ErrorResponse(message, 404);
   }
@@ -16,14 +16,14 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Mongoose Duplicate objectId
-  if (error.name === "ValidatorError") {
+  if (error.name === 'ValidatorError') {
     message = Object.values(error.errors).map((e) => e.message);
     error = new ErrorResponse(message, 400);
   }
 
   res.status(error.statusCode || 500).json({
     success: false,
-    error: error.message || "Server Error!!!",
+    error: error.message || 'Internal Server Error',
   });
 };
 
