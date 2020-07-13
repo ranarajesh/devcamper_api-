@@ -17,4 +17,7 @@ ARG NODE_VERSION=12.16.1
 # Build Environment
 ENV NODE_VERSION=${NODE_VERSION}
 
-CMD [ "/bin/bash" ]
+# CMD [ "/bin/bash" ]
+CMD ["npm", "start"]
+
+EXPOSE 3000
